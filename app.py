@@ -25,16 +25,18 @@ def add_relationship():
     return jsonify(result), 201
 
 
-# @app.route("/relationships", methods=['GET'])
-# def get_relationships():
-#     query = """
-#     MATCH (p:Person)-[r:RELATES_TO]-(related)
-#     RETURN p.name AS name, collect(related.name) AS related_persons, collect(type(r)) AS relationships
-#     """
-#     # 这里的graph.run返回一个Neo4j结果对象，通过.data()将结果转化为列表
-#     result = graph.run(query).data()
-#     # 这将返回一个包含所有人物及其关系的列表
-#     return jsonify(result)
+@app.route("/relationships_all", methods=['GET'])
+def get_relationshipsall():
+    query = """
+    MATCH (p:Person)-[r:RELATES_TO]-(related)
+    RETURN p.name AS name, collect(related.name) AS related_persons, collect(r.type) AS relationships
+    """
+    # 这里的graph.run返回一个Neo4j结果对象，通过.data()将结果转化为列表
+    result = graph.run(query).data()
+    # 这将返回一个包含所有人物及其关系的列表
+    return jsonify(result)
+
+
 @app.route("/relationships/<string:person_name>", methods=['GET'])
 def get_relationships(person_name):
     # 使用参数来过滤查询结果
