@@ -91,6 +91,21 @@
         var network = new vis.Network(container, data, options);
     }
 
+    function searchRelations_all() {
+        axios.get('/relationships_all')
+            .then(function (response) {
+                if (!response.data.length) {
+                    alert('No relationships found.');
+                    return;
+                }
+                drawGraph(response.data);
+            })
+            .catch(function (error) {
+                console.error('An error occurred!', error.response);
+                alert('An error occurred. Check the console for details.');
+            });
+    }
+
     // 搜索整个网络而不是特定的人物
     function searchRelations() {
         var personName = document.getElementById('search_person').value;
@@ -120,7 +135,7 @@
     }
 
     // 该函数可以在页面加载时立即调用，以展现整个网络
-    searchRelations();
+    searchRelations_all();
 
     // Function to add a relationship
     function addRelationship(event) {
