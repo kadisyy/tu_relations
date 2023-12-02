@@ -1,0 +1,171 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person Relationships Graph</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        #network {
+            height: 800px;
+            border: 1px solid lightgray;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Person Relationships Graph</h1>
+    <div>
+        <!-- Add Relationship Form -->
+        <form id="addForm" onsubmit="addRelationship(event)">
+            <input type="text" id="from_person" placeholder="From Person" required>
+            <input type="text" id="to_person" placeholder="To Person" required>
+            <input type="text" id="relationship_type" placeholder="Relationship Type" required>
+            <input type="submit" value="Add Relationship">
+        </form>
+        <hr>
+        <!-- Search and Display Section -->
+        <input type="text" id="search_person" placeholder="Person Name">
+        <button onclick="searchRelations()">Search Relationships</button>
+        <button onclick="deleteRelation()">Delete Relationship</button>
+        <div id="network"></div>
+    </div>
+</div>
+
+<script>
+    // JavaScript functions to be implemented inside the script tag of index.html
+
+    // 重新定义drawGraph函数来处理多个节点
+    function drawGraph(relationships) {
+        var nodesArray = new vis.DataSet();
+        var edgesArray = new vis.DataSet();
+
+        relationships.forEach(function (rel) {
+            // 添加节点...
+            if (!nodesArray.get(rel.name)) {
+                nodesArray.add({id: rel.name, label: rel.name, shape: 'ellipse'});
+            }
+
+            // 确保related_persons和relationships是一个数组
+            var relatedPersons = Array.isArray(rel.related_persons) ? rel.related_persons : [];
+            var relations = Array.isArray(rel.relationships) ? rel.relationships : [];
+
+            relatedPersons.forEach(function (related_person, index) {
+                // 添加节点...
+                if (related_person && !nodesArray.get(related_person)) {
+                    nodesArray.add({id: related_person, label: related_person, shape: 'ellipse'});
+                }
+
+                // 在这里，我们添加了检查以确保relationships数组拥有一个有效的索引
+                if (index < relations.length) {
+                    // 添加边时，使用relationships数组中的对应项作为标签
+                    edgesArray.add({
+                        from: rel.name,
+                        to: related_person,
+                        label: relations[index]
+                    });
+                }
+            });
+        });
+
+        // 使用vis.js的网络来初始化可视化
+        var container = document.getElementById('network');
+        var data = {
+            nodes: nodesArray,
+            edges: edgesArray
+        };
+        var options = {
+            edges: {
+                arrows: {
+                    to: {enabled: true, scaleFactor: 1, type: 'arrow'}
+                },
+                font: {
+                    align: 'top'
+                }
+            }
+        };
+        var network = new vis.Network(container, data, options);
+    }
+
+    // 搜索整个网络而不是特定的人物
+    function searchRelations() {
+        var personName = document.getElementById('search_person').value;
+        // 在发送请求之前检查personName是否已定义
+        if (typeof personName === 'undefined') {
+            console.error('personName is undefined.');
+            return;
+        }
+        // Make sure the endpoint URL matches your Flask app's URL structure
+        axios.get('/relationships/' + encodeURIComponent(personName))
+            .then(function (response) {
+                // Check if the response contains data
+                if (!response.data || response.data.length === 0
+                ) {
+                    alert('No relationships found.');
+                    return;
+                }
+                // If there's data, draw the graph
+                drawGraph(response.data);
+            })
+            .catch(function (error) {
+                // Error handling
+                console.error('An error occurred!', error);
+                // Adjust the error message accordingly
+                alert('An error occurred. Check the console for details.');
+            });
+    }
+
+    // 该函数可以在页面加载时立即调用，以展现整个网络
+    searchRelations();
+
+    // Function to add a relationship
+    function addRelationship(event) {
+        event.preventDefault();
+        var fromPerson = document.getElementById('from_person').value;
+        var toPerson = document.getElementById('to_person').value;
+        var relationshipType = document.getElementById('relationship_type').value;
+        axios.post('/relationships', {
+            from_person: fromPerson,
+            to_person: toPerson,
+            relationship_type: relationshipType
+        }).then(function (response) {
+            alert('Relationship added!');
+            document.getElementById('addForm').reset();
+        })
+            .catch(function (error) {
+                alert('An error occurred!');
+            });
+    }
+
+
+    // Function to delete a relationship
+    function deleteRelation() {
+        var fromPerson = document.getElementById('from_person').value;
+        var toPerson = document.getElementById('to_person').value;
+        var relationshipType = document.getElementById('relationship_type').value;
+        axios.delete('/relationships', {
+            data: {
+                from_person: fromPerson,
+                to_person: toPerson,
+                relationship_type: relationshipType
+            }
+        }).then(function (response) {
+            alert('Relationship deleted!');
+            searchRelations(); // Refresh the graph
+        }).catch(function (error) {
+            alert('An error occurred!');
+        });
+    }
+
+    // Ensure that the whole page is loaded before running any script
+    document.addEventListener('DOMContentLoaded', function () {
+        // Possible initializations or event bindings
+    });
+</script>
+
+</body>
+</html>
