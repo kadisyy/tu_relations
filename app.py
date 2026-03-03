@@ -1,6 +1,8 @@
 # app.py
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from py2neo import Graph
+import base64
+import io
 
 app = Flask(__name__)
 graph = Graph("bolt://localhost:7687", auth=("neo4j", "12345678"))
@@ -58,6 +60,27 @@ def delete_relationship():
     graph.run(query, from_person=data['from_person'], to_person=data['to_person'],
               relationship_type=data['relationship_type'])
     return jsonify('Relationship deleted'), 204
+
+
+@app.route("/generate_image", methods=['POST'])
+def generate_image():
+    data = request.get_json(silent=True)
+    if not data or 'image_data' not in data:
+        return jsonify({'error': 'Invalid request: image_data is required'}), 400
+    image_data = data.get('image_data', '')
+    # Strip the data URL prefix (e.g. "data:image/png;base64,")
+    if ',' in image_data:
+        image_data = image_data.split(',', 1)[1]
+    try:
+        img_bytes = base64.b64decode(image_data)
+    except Exception:
+        return jsonify({'error': 'Invalid base64 image data'}), 400
+    return send_file(
+        io.BytesIO(img_bytes),
+        mimetype='image/png',
+        as_attachment=True,
+        download_name='relationships_graph.png'
+    )
 
 
 if __name__ == "__main__":
