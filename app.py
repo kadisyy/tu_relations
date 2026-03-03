@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify, render_template, send_file
 from py2neo import Graph
 import base64
 import io
+import urllib.request
+import json
 
 app = Flask(__name__)
 graph = Graph("bolt://localhost:7687", auth=("neo4j", "12345678"))
@@ -81,6 +83,19 @@ def generate_image():
         as_attachment=True,
         download_name='relationships_graph.png'
     )
+
+
+@app.route("/dog_image", methods=['GET'])
+def dog_image():
+    try:
+        with urllib.request.urlopen('https://dog.ceo/api/breeds/image/random', timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+        url = data.get('message', '')
+        if not url:
+            return jsonify({'error': '未获取到图片链接'}), 502
+        return jsonify({'url': url})
+    except Exception as e:
+        return jsonify({'error': '获取小狗图片失败: ' + str(e)}), 502
 
 
 if __name__ == "__main__":
