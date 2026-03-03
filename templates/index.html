@@ -32,12 +32,21 @@
         <input type="text" id="search_person" placeholder="Person Name">
         <button onclick="searchRelations()">Search Relationships</button>
         <button onclick="deleteRelation()">Delete Relationship</button>
+        <button onclick="generateImage()">生成图片 (Save as Image)</button>
         <div id="network"></div>
+        <div id="image-preview" style="margin-top:10px;"></div>
+        <hr>
+        <!-- 小狗的图片 Section -->
+        <h2>小狗的图片 🐶</h2>
+        <button onclick="fetchDogImage()">获取小狗图片</button>
+        <div id="dog-image-container" style="margin-top:10px;"></div>
     </div>
 </div>
 
 <script>
     // JavaScript functions to be implemented inside the script tag of index.html
+
+    var network = null;
 
     // 重新定义drawGraph函数来处理多个节点
     function drawGraph(relationships) {
@@ -88,7 +97,31 @@
                 }
             }
         };
-        var network = new vis.Network(container, data, options);
+        network = new vis.Network(container, data, options);
+    }
+
+    function generateImage() {
+        if (!network) {
+            alert('请先加载关系图后再生成图片。');
+            return;
+        }
+        var canvas = network.getCanvas();
+        var dataUrl = canvas.toDataURL('image/png');
+        // 显示预览（通过DOM操作，避免XSS风险）
+        var preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+        var label = document.createElement('p');
+        label.textContent = '图片预览：';
+        var img = document.createElement('img');
+        img.setAttribute('src', dataUrl);
+        img.setAttribute('style', 'max-width:100%;border:1px solid #ccc;');
+        preview.appendChild(label);
+        preview.appendChild(img);
+        // 触发下载
+        var link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'relationships_graph.png';
+        link.click();
     }
 
     function searchRelations_all() {
@@ -174,6 +207,29 @@
         }).catch(function (error) {
             alert('An error occurred!');
         });
+    }
+
+    // Function to fetch and display a random dog image
+    function fetchDogImage() {
+        var container = document.getElementById('dog-image-container');
+        container.textContent = '加载中...';
+        axios.get('/dog_image')
+            .then(function (response) {
+                container.textContent = '';
+                if (response.data.error) {
+                    container.textContent = response.data.error;
+                    return;
+                }
+                var img = document.createElement('img');
+                img.setAttribute('src', response.data.url);
+                img.setAttribute('alt', '小狗图片');
+                img.setAttribute('style', 'max-width:400px;max-height:400px;border:1px solid #ccc;border-radius:8px;');
+                container.appendChild(img);
+            })
+            .catch(function (error) {
+                container.textContent = '获取图片失败，请重试。';
+                console.error('Dog image fetch error:', error);
+            });
     }
 
     // Ensure that the whole page is loaded before running any script
