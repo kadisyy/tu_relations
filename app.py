@@ -60,5 +60,45 @@ def delete_relationship():
     return jsonify('Relationship deleted'), 204
 
 
+@app.route("/capabilities", methods=['GET'])
+def get_capabilities():
+    capabilities = {
+        "描述": "人物关系图谱管理系统",
+        "功能列表": [
+            {
+                "功能": "添加人物关系",
+                "描述": "在两个人物之间创建一条带有关系类型的有向边",
+                "接口": "POST /relationships",
+                "参数": {"from_person": "起始人物名称", "to_person": "目标人物名称", "relationship_type": "关系类型"}
+            },
+            {
+                "功能": "查询指定人物的关系",
+                "描述": "查询某个人物与其他人物之间的所有关系",
+                "接口": "GET /relationships/<person_name>",
+                "参数": {"person_name": "要查询的人物名称"}
+            },
+            {
+                "功能": "查询所有人物关系",
+                "描述": "获取图数据库中所有人物及其关系",
+                "接口": "GET /relationships_all",
+                "参数": {}
+            },
+            {
+                "功能": "删除人物关系",
+                "描述": "删除两个人物之间指定类型的关系",
+                "接口": "DELETE /relationships",
+                "参数": {"from_person": "起始人物名称", "to_person": "目标人物名称", "relationship_type": "关系类型"}
+            },
+            {
+                "功能": "查看系统功能",
+                "描述": "返回系统支持的所有功能列表",
+                "接口": "GET /capabilities",
+                "参数": {}
+            }
+        ]
+    }
+    return jsonify(capabilities)
+
+
 if __name__ == "__main__":
     app.run(debug=True)

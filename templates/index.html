@@ -32,6 +32,8 @@
         <input type="text" id="search_person" placeholder="Person Name">
         <button onclick="searchRelations()">Search Relationships</button>
         <button onclick="deleteRelation()">Delete Relationship</button>
+        <button onclick="showCapabilities()">系统能做什么？</button>
+        <div id="capabilities" style="display:none; margin-top:10px;"></div>
         <div id="network"></div>
     </div>
 </div>
@@ -136,6 +138,29 @@
 
     // 该函数可以在页面加载时立即调用，以展现整个网络
     searchRelations_all();
+
+    // Function to show system capabilities
+    function showCapabilities() {
+        var capDiv = document.getElementById('capabilities');
+        if (capDiv.style.display !== 'none') {
+            capDiv.style.display = 'none';
+            return;
+        }
+        axios.get('/capabilities')
+            .then(function (response) {
+                var data = response.data;
+                var html = '<h3>' + data['描述'] + '</h3><ul>';
+                data['功能列表'].forEach(function (item) {
+                    html += '<li><strong>' + item['功能'] + '</strong>（' + item['接口'] + '）：' + item['描述'] + '</li>';
+                });
+                html += '</ul>';
+                capDiv.innerHTML = html;
+                capDiv.style.display = 'block';
+            })
+            .catch(function (error) {
+                alert('无法获取功能列表：' + error.message);
+            });
+    }
 
     // Function to add a relationship
     function addRelationship(event) {
